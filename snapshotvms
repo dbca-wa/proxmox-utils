@@ -3,7 +3,7 @@ import subprocess
 from datetime import datetime, timedelta
 from collections import namedtuple
 
-# Copy to /etc/cron.hourly/snapshotvms on a proxmox cluster node
+# Copy to /etc/cron.daily/snapshotvms on a proxmox cluster node
 # Needs to be run on a cluster, goes through each node and snapshots vms
 nodes = [row.split()[2] for row in subprocess.check_output(["pvecm",  "nodes"]).decode("utf-8").strip().split("\n")[3:]]
 
@@ -12,7 +12,7 @@ for node in nodes:
     VMInfo = namedtuple("vminfo", vms[0].strip().replace("(", "_").replace(")", "").split())
     Snap = namedtuple("Snap", ["name", "parent", "desc", "date"])
     # date followed by 24hr time, with minutes truncated to disallow multiple snaps per hour
-    timeformat = "auto_%Y%m%d_%H00" 
+    timeformat = "auto_%Y%m%d" 
     now = datetime.now()
     maxage = timedelta(days=7)
 
