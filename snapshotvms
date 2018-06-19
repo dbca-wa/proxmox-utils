@@ -10,7 +10,7 @@ nodes = [row.split()[2] for row in subprocess.check_output(["pvecm",  "nodes"]).
 for node in nodes:
     vms = subprocess.check_output(["ssh", node, "qm", "list"]).decode("utf-8").strip().split("\n")
     VMInfo = namedtuple("vminfo", vms[0].strip().replace("(", "_").replace(")", "").split())
-    Snap = namedtuple("Snap", ["name", "parent", "desc", "date"])
+    Snap = namedtuple("Snap", ["name", "parent", "desc"])
     # date followed by 24hr time, with minutes truncated to disallow multiple snaps per hour
     timeformat = "auto_%Y%m%d" 
     now = datetime.now()
@@ -27,11 +27,14 @@ for node in nodes:
         if snapshots and len(snapshots) > 1:
             snapshots.sort()
             for snap in snapshots:
-                snap = Snap(*snap.strip().split(), None) 
-                try: snap.date = datetime.strptime(snap.name, timeformat)
-                except: continue # If name doesn't parse, it wasn't an automated snapshot, so just skip to next
-                if now - snap.date > maxage: # delete snapshots older than maxage
+                snap = Snap(*snap.strip().split()) 
+                try: snapdate = datetime.strptime(snap.name, timeformat)
+                except Exception as e:
+                    print(e)
+                    continue # If name doesn't parse, it wasn't an automated snapshot, so just skip to next
+                if now - snapdate > maxage: # delete snapshots older than maxage
                     try:
+                        print("Deleting snapshot {}@{}".format(vm.VMID, snap.name))
                         subprocess.check_call(["ssh", node, "qm", "delsnapshot", vm.VMID, snap.name])
                     except Exception as e:
                         print(e)
